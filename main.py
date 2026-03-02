@@ -135,3 +135,20 @@ except Exception as e:
     print("Failed to load model!")
     print(e)
     raise
+
+#---LLM insights---
+def generate_with_llm(prompt):
+    response = llm(
+        prompt,
+        max_tokens=300,
+        temperature=0.7
+    )
+    out = response["choices"][0]["text"].strip()
+    return out if out else "No output generated."
+
+# Interacting with LLM
+
+def chunk_text(text, max_words=400):
+    words = text.split()
+    for i in range(0, len(words), max_words):
+        yield " ".join(words[i:i+max_words])
