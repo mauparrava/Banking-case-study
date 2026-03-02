@@ -152,3 +152,47 @@ def chunk_text(text, max_words=400):
     words = text.split()
     for i in range(0, len(words), max_words):
         yield " ".join(words[i:i+max_words])
+
+def generate_summary_llm(text, label_name):
+    # Prepare prompt
+    unified_prompt = f"""You are an expert summarizer.
+Summarize the customer queries and issues for the label: **{label_name}** into 3-5 crystal-clear bullet points.
+- Do not repeat points.
+- Make sure each bullet is a complete sentence.
+- Keep the language clear and specific.
+- End each bullet with proper punctuation.
+- Focus only on key themes for this label.
+- Be concise and clear.
+TEXT:
+"""
+
+    # The generate_summary_llm function uses the LLM to generate a concise, bullet-point summary of customer queries based on a specific label.
+    #
+    # Function Purpose:
+    #
+    # To extract 3–5 key insights from long text data (e.g., customer complaints) related to a particular label, using clear and actionable bullet points.
+    #Its ideal for generating compact summaries from large datasets of customer feedback, categorized by themes or labels like "Account Access," "Billing Issues," etc.
+    chunks = list(chunk_text(text, max_words=400))
+    summaries = []
+
+    for idx, chunk in enumerate(chunks, 1):
+        print(f"Summarizing chunk {idx}/{len(chunks)} for label '{label_name}'...")
+        summaries.append(generate_with_llm(unified_prompt + chunk))
+
+    # Final summary from partial summaries
+    combined_text = " ".join(summaries)
+    return generate_with_llm(unified_prompt + combined_text) if len(chunks) > 1 else summaries[0]
+
+import random
+
+label_summaries = {}
+unique_labels = clean_df['label_name'].unique()
+selected_labels = random.sample(list(unique_labels), 4)  # pick 4 random labels
+
+for label_name in selected_labels:
+    subset_df = clean_df[clean_df['label_name'] == label_name]
+    sampled_texts = subset_df['clean_text'].sample(min(30, len(subset_df)), random_state=42)
+    combined_text = " ".join(sampled_texts)
+
+    if combined_text.strip():
+        label_summaries[label_name] = generate_summary_llm(combined_text, label_name)
