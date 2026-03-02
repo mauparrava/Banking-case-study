@@ -98,3 +98,40 @@ plt.title("Top 20 Most Frequent Words in Cleaned Queries")
 plt.xlabel("Count")
 plt.ylabel("Word")
 plt.show()
+
+#LLM insight generation
+
+from huggingface_hub import hf_hub_download
+model_name_or_path = "TheBloke/Llama-2-7B-chat-GGUF"
+model_basename = "llama-2-7b-chat.Q5_K_M.gguf" # the model is in gguf format
+model_path = hf_hub_download(
+    repo_id=model_name_or_path,
+    filename=model_basename
+)
+
+from llama_cpp import Llama
+import time
+
+print(f"Starting to load model: {model_basename}")
+start_time = time.time()
+
+try:
+    llm = Llama(
+        model_path=model_path,
+        n_gpu_layers=-1,  # -1 = try max GPU offload
+        n_batch=512,  # larger is often better if VRAM allows
+        n_ctx=4096,
+        n_threads=8,
+        verbose=True
+    )
+    load_time = time.time() - start_time
+    print(f"Model loaded successfully in {load_time:.1f} seconds!")
+
+    # Quick test
+    response = llm("Say hello world in Spanish.", max_tokens=30, temperature=0.0)
+    print("Test generation:", response['choices'][0]['text'].strip())
+
+except Exception as e:
+    print("Failed to load model!")
+    print(e)
+    raise
